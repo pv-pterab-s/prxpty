@@ -290,6 +290,6 @@ Bench scripts output JSON to `out/<test path>.out`.
   -- Local Variables:
   -- eval: (olivetti-mode);
   -- eval: (local-set-key (kbd "C-c C-c") 'compile);
-  -- compile-command: "generate-md --layout github --input ./README.md --output ./README.html";
+  -- compile-command: "generate-md --layout github --input ./README.md --output out/html && cd out/html && inliner README.html > README.min.html 2>/dev/null && scp README.min.html nickelspike:static/9f48154b-9f46-4a58-856d-6e96fddf83da";
   -- End:
 -->
