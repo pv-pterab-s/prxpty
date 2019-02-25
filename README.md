@@ -1,9 +1,8 @@
 # prxpty
 
 Attach and develop stream filter pipelines to pseudoterminals' `stdin` and
-`stdout`. Facilitate custom compression, new interactive features (menus,
-autocomplete, etc), and more to terminal applications. No change to
-existing apps.
+`stdout`. Terminal apps to have custom compression, new interactive
+features (menus, autocomplete, etc), and more without modification.
 
     # start an interactive bash session w/ filtered stdin, stdout
     prxpty -o filterStdout -i filterStdin bash
