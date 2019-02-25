@@ -1,0 +1,20 @@
+{
+  "name": "prxpty",
+  "version": "1.0.0",
+  "description": "Attach and develop stream filter pipelines to pseudoterminals' `stdin` and `stdout`. Facilitate custom compression, new interactive features (menus, autocomplete, etc), and more to terminal applications. No change to existing apps.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@x0_:/git/prxpty"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "livescript": "^1.6.0",
+    "node-pty": "^0.8.1"
+  }
+}
