@@ -24,13 +24,12 @@ function main {
 TESTNAME="$1"
 if [ "$TESTNAME" = "-s" ] ; then
   shift
-  # simply run path directly referencing test script
-  if [ -f $1 ] ; then
+  RELPATH=$(src_path_to_rel_path $1)
+  if [ -f $RELPATH ] ; then  # run path directly when is test script
     $1
     exit 0
-  else
-    TESTNAME=$(path_to_test $1)
   fi
+  TESTNAME=${RELPATH%.*}   # drop extension
 fi
 
 # detect all paths associated with incoming test

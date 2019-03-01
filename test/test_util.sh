@@ -23,9 +23,7 @@ function test_to_regexp {
   echo $REGEXP
 }
 
-function path_to_test {  # drop src dir, ext off target (\UNTESTED)
-  local TARGET="$1"
-  SRC=${PRXPTY}src/
-  RELPATH=$(echo $TARGET | sed 's@^.*src/@@g')
-  echo ${RELPATH%.*}   # drop extension
+function src_path_to_rel_path {  # drop src dir, ext off target (\UNTESTED)
+  local SRC=${PRXPTY}src/
+  echo $1 | sed 's@^.*src/@@g'
 }
