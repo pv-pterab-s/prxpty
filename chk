@@ -11,7 +11,7 @@ set -e
 function main {
   local TARGET="$1"
   if [ -z "$TARGET" ] ; then TARGET="test"; fi
-  if [ -f "$TARGET" ] ; then echo testing ./$TARGET ; fi
+  if [ -f "$TARGET" ] ; then ./$TARGET ; fi
   if [ -d "$TARGET" ] ; then
     for I in `ls $TARGET | grep '^[0-9]\+' | sort` ; do
       main $TARGET/$I

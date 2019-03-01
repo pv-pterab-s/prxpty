@@ -1,4 +1,4 @@
 #!/bin/bash
 set -e
 
-echo $0
+echo testing prxpty
