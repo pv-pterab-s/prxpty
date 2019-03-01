@@ -5,7 +5,11 @@
                       (node-modules-bin-path (concat prxpty-path ".bin"))
                       (bin-path (concat prxpty-path "bin"))
                       (path (concat bin-path ":" node-modules-bin-path ":" (getenv "PATH")))
-                      (set-path (concat "PATH=" path))
-                      (new-env (cons set-path compilation-environment)))
+                      (path-def (concat "PATH=" path))
+                      (prxpty-def (concat "PRXPTY=" prxpty-path))
+                      (new-env (cons prxpty-def (cons path-def compilation-environment))))
                  (setq-local compilation-environment
-                             (remove-duplicates new-env :test 'string=)))))))
+                             (remove-duplicates new-env :test 'string=))
+                 (if buffer-file-name
+                     (setq-local compile-command
+                                 (concat prxpty-path "chk -s " buffer-file-name))))))))

@@ -1,0 +1,36 @@
+#!/bin/bash
+# -*- compile-command: "PRXPTY=~/prxpty/ ./chk"; -*-
+# usage:
+#   chk <name> - runs test `find test [0-9]+_<name>\.[^.]+`
+#   chk -s <path> - runs test `basename path`
+# test names may not include the character '.'
+set -e
+
+. test/test_util.sh
+
+function main {
+  local TARGET="$1"
+  if [ -z "$TARGET" ] ; then TARGET="test"; fi
+  if [ -f "$TARGET" ] ; then echo testing ./$TARGET ; fi
+  if [ -d "$TARGET" ] ; then
+    for I in `ls $TARGET | grep '^[0-9]\+' | sort` ; do
+      main $TARGET/$I
+    done
+  fi
+}
+
+# convert filename to test name
+#   (tests include leading digits, different ext's)
+TESTNAME="$1"
+if [ "$TESTNAME" = "-s" ] ; then
+  shift
+  TESTNAME=$(path_to_test $1)
+fi
+
+# detect all paths associated with incoming test
+REGEXP=$(test_to_regexp $TESTNAME)
+TESTFILES=$(find test -regex $REGEXP | sort)
+
+for TESTFILE in $TESTFILES ; do
+  main $TESTFILE
+done
