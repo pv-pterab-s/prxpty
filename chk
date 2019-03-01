@@ -24,7 +24,13 @@ function main {
 TESTNAME="$1"
 if [ "$TESTNAME" = "-s" ] ; then
   shift
-  TESTNAME=$(path_to_test $1)
+  # simply run path directly referencing test script
+  if [ -f $1 ] ; then
+    $1
+    exit 0
+  else
+    TESTNAME=$(path_to_test $1)
+  fi
 fi
 
 # detect all paths associated with incoming test

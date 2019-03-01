@@ -1,5 +1,4 @@
 #!/bin/bash
-# -*- compile-command: "cd ../ && ./test/00_test.sh"; -*-
 set -e
 
 . $(dirname $0)/test_util.sh
