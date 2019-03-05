@@ -10,9 +10,6 @@ E = (s) -> console.error s; s
 
 
 
-
-
-
 parse-args-list-helper = (argv, out) ->
   is-str-option = (.match /^-/)
 
@@ -47,14 +44,10 @@ parse-args-list-helper = (argv, out) ->
 parse-args-list = (argv) ->
   parse-args-list-helper (argv.slice 3), {I: [], O: []}
 
-
-
-
 opts = parse-args-list process.argv
 
 
 
-# fire up filters and chain together
 input-procs = []
 output-procs = []
 start-filter = ({cmd, number, type}) ->
@@ -92,7 +85,9 @@ term.on 'exit', (code) ->
 
   process.stdin.destroy!
 
-process.stdout.on 'resize', -> term.resize(process.stdout.columns, process.stdout.rows)
+process.stdout.on 'resize', ->
+  term.resize process.stdout.columns, process.stdout.rows
+
 
 
 # output data stream on pipe O e.g,
@@ -118,7 +113,7 @@ input-pipes = (output-procs.map (.stdin)) ++ [process.stdout]
 #                       V      V----/      \--V
 #   input-pipes  =    (I[0], I[1]) (.stdin)  term
 output-pipes = [process.stdin] ++ input-procs.map (.stdin)
-input-pipes = (input-procs.map (.stdin)) ++ [term]
+input-pipes = (input-procs.map (.stdout)) ++ [term]
 (zip output-pipes, input-pipes).map ([i, o]) ->
   E "[I] #{i.constructor.name} -> #{o.constructor.name}"
   i.on 'data', (d) -> o.write d
