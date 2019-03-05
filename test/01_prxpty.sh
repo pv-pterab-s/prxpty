@@ -1,33 +1,17 @@
 #!/bin/bash
 set -e
 
-echo [TEST] $0
+# evaluate standalone and simple passthru filters
+TESTNO=00
+function do_test {
+  echo "[TEST$(printf '%0.2d' $TESTNO)]"
+  local TEMP=$(mktemp)
+  $* bash -c "$CMD" > $TEMP
+  echo -en "${GOLD}\r\n" | cmp $TEMP -
+  TESTNO=$(printf '%0.2d' $((TESTNO + 1)))
+}
 
-
-# \TEST01 exec with no filters
-echo "[TEST01]"
-TEMP=$(mktemp)
-prxpty bash -c 'echo hey' > $TEMP
-echo -en 'hey\r\n' | cmp $TEMP -
-
-# \TEST02 exec with one passthru out filter
-echo "[TEST02]"
-TEMP=$(mktemp)
-prxpty -o cat bash -c 'echo hey' > $TEMP
-echo -en 'hey\r\n' | cmp $TEMP -
-
-# \TEST03 exec with one passthru in filter
-echo "[TEST03]"
-TEMP=$(mktemp)
-prxpty -i cat bash -c 'echo hey' > $TEMP
-echo -en 'hey\r\n' | cmp $TEMP -
-
-
-# \TEST04 exec thru in and out passthru filter
-echo "[TEST04]"
-TEMP=$(mktemp)
-prxpty -i cat -o cat bash -c 'echo hey' > $TEMP
-echo -en 'hey\r\n' | cmp $TEMP -
-
-
-echo [PASS] $0
+CMD='echo hey' GOLD='hey' do_test prxpty
+CMD='echo hey' GOLD='hey' do_test prxpty -o cat
+CMD='echo hey' GOLD='hey' do_test prxpty -i cat
+CMD='echo hey' GOLD='hey' do_test prxpty -i cat -o cat

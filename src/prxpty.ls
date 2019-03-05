@@ -10,10 +10,7 @@ E = (s) -> console.error s; s
 
 
 
-
-
-
-parse-args-list-helper = (argv, out) ->
+parse-args-list = (argv, out = {}) ->
   is-str-option = (.match /^-/)
 
   is-option-i = (list) ->
@@ -22,57 +19,38 @@ parse-args-list-helper = (argv, out) ->
   is-option-o = (list) ->
     (list[0].match /^-o/) and not (is-str-option list[1])
 
-  add-filter = (out, key, value) -> out[key].push {
-    cmd: value
-    number: out[key].length
-    type: key
-  }
-
-  set-cmd = (out, argv) ->
-    out.exec = argv[0]
-    out.args = argv.slice 1
-
   switch
     when is-option-i argv
-      add-filter out, 'I', argv[1]
-      parse-args-list-helper (argv.slice 2), out
+      out.I = argv[1]
+      parse-args-list (argv.slice 2), out
     when is-option-o argv
-      add-filter out, 'O', argv[1]
-      parse-args-list-helper (argv.slice 2), out
+      out.O = argv[1]
+      parse-args-list (argv.slice 2), out
     else
-      set-cmd out, argv
-      out.O = reverse out.O
+      [out.exec, ...out.args] = argv
       out
 
-parse-args-list = (argv) ->
-  parse-args-list-helper (argv.slice 3), {I: [], O: []}
+opts = parse-args-list process.argv.slice 3
 
 
 
+start-filter = (cmd, type) ->
+  return if not cmd?
 
-opts = parse-args-list process.argv
-
-
-
-# fire up filters and chain together
-input-procs = []
-output-procs = []
-start-filter = ({cmd, number, type}) ->
-
-  E "[INFO] starting filter #{cmd} #{type}#{number}"
+  E "[INFO] starting filter #{type} #{cmd}"
   [exec, ...args] = shell-quote.parse cmd
 
   proc = child-process.spawn exec, args
   proc.cmd = cmd
   proc.on 'error', ->
-    E "[FAIL] cmd #{cmd} (##{type}#{number})"
+    E "[FAIL] cmd (#{type}) #{cmd}"
     process.exit 1
   proc.on 'exit', ->
-    E "[INFO] exit cmd #{cmd} (##{type}#{number})"
+    E "[INFO] exit (#{type}) cmd #{cmd}"
   proc
 
-input-procs = map start-filter, opts.I
-output-procs = map start-filter, opts.O
+input-proc = start-filter opts.I, 'I'
+output-proc = start-filter opts.O, 'O'
 
 
 
@@ -85,15 +63,18 @@ term = pty.spawn (opts.exec or 'bash'), (opts.args or []),
   env: process.env
 
 term.on 'exit', (code) ->
-  if output-procs.length > 0
-    output-procs[0].stdin.end!
-  if input-procs.length > 0
-    input-procs[0].stdin.end!
-
+  if output-proc? then output-proc.stdin.destroy!
+  if input-proc? then input-proc.stdin.destroy!
   process.stdin.destroy!
 
-process.stdout.on 'resize', -> term.resize(process.stdout.columns, process.stdout.rows)
+process.stdout.on 'resize', ->
+  term.resize process.stdout.columns, process.stdout.rows
 
+
+
+pipe = (label = '', _in, out) ->
+  E "[PIPE] #{label} #{_in.constructor.name} -> #{out.constructor.name}"
+  _in.pipe out
 
 # output data stream on pipe O e.g,
 #   T.on('data') -> O[0].stdin
@@ -103,11 +84,11 @@ process.stdout.on 'resize', -> term.resize(process.stdout.columns, process.stdou
 #   output-pipes = term, (O[0], O[1]) (.stdout)
 #                    V      V     \--------------V
 #   input-pipes  = (O[0], O[1]) (.stdin) , process.stdout
-output-pipes = [term] ++ output-procs.map (.stdout)
-input-pipes = (output-procs.map (.stdin)) ++ [process.stdout]
-(zip output-pipes, input-pipes).map ([i, o]) ->
-  E "[O] #{i.constructor.name} -> #{o.constructor.name}"
-  i.on 'data', (d) -> o.write d
+if output-proc?
+  pipe 'O', term, output-proc.stdin
+  pipe 'O', output-proc.stdout, process.stdout
+else
+  pipe 'O', term, process.stdout
 
 # input data stream on pipe I e.g.
 #   process.stdin -> I[0].stdin
@@ -117,11 +98,12 @@ input-pipes = (output-procs.map (.stdin)) ++ [process.stdout]
 #   output-pipes = process.stdin  (I[0], I[1]) (.stdout)
 #                       V      V----/      \--V
 #   input-pipes  =    (I[0], I[1]) (.stdin)  term
-output-pipes = [process.stdin] ++ input-procs.map (.stdin)
-input-pipes = (input-procs.map (.stdin)) ++ [term]
-(zip output-pipes, input-pipes).map ([i, o]) ->
-  E "[I] #{i.constructor.name} -> #{o.constructor.name}"
-  i.on 'data', (d) -> o.write d
+if input-proc?
+  pipe 'I', process.stdin, input-proc.stdin
+  pipe 'I', input-proc.stdout, term
+else
+  pipe 'I', process.stdin, term
+
 
 if process.stdin.setRawMode?      # missing if stdin not a tty
   process.stdin.setRawMode true
