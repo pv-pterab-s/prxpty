@@ -77,18 +77,29 @@ term = pty.spawn (opts.exec or 'bash'), (opts.args or []),
   cwd: process.env.HOME
   env: process.env
 
-term.on 'exit', (code) ->
+term.on 'exit', ->
   if output-procs.length > 0
     output-procs[0].stdin.end!
   if input-procs.length > 0
     input-procs[0].stdin.end!
-
   process.stdin.destroy!
 
 process.stdout.on 'resize', ->
   term.resize process.stdout.columns, process.stdout.rows
 
 
+
+idx-procs = (procs) ->
+  procs.map (proc, k) ->
+    proc.stdin.idx = k
+    proc.stdout.idx = k
+
+emit-pipe = (tag, i, o, d, msg = '') ->
+  ## desc = (p) ->
+  ##   "#{p.constructor.name}" + if p.idx? then "(#{p.idx})" else ""
+  ## dataLen = (d) ->
+  ##   if d? then "(#{d.length})" else ""
+  ## E "[#{tag}] #{dataLen d} #{desc i} -> #{desc o} #{msg}"
 
 # output data stream on pipe O e.g,
 #   T.on('data') -> O[0].stdin
@@ -98,11 +109,14 @@ process.stdout.on 'resize', ->
 #   output-pipes = term, (O[0], O[1]) (.stdout)
 #                    V      V     \--------------V
 #   input-pipes  = (O[0], O[1]) (.stdin) , process.stdout
+idx-procs output-procs
 output-pipes = [term] ++ output-procs.map (.stdout)
 input-pipes = (output-procs.map (.stdin)) ++ [process.stdout]
 (zip output-pipes, input-pipes).map ([i, o]) ->
-  E "[O] #{i.constructor.name} -> #{o.constructor.name}"
-  i.on 'data', (d) -> o.write d
+  emit-pipe 'O', i, o
+  i.on 'data', (d) ->
+    emit-pipe 'O', i, o, d, 'write'
+    o.write d
 
 # input data stream on pipe I e.g.
 #   process.stdin -> I[0].stdin
@@ -112,11 +126,14 @@ input-pipes = (output-procs.map (.stdin)) ++ [process.stdout]
 #   output-pipes = process.stdin  (I[0], I[1]) (.stdout)
 #                       V      V----/      \--V
 #   input-pipes  =    (I[0], I[1]) (.stdin)  term
-output-pipes = [process.stdin] ++ input-procs.map (.stdin)
-input-pipes = (input-procs.map (.stdout)) ++ [term]
+idx-procs input-procs
+output-pipes = [process.stdin] ++ input-procs.map (.stdout)
+input-pipes = (input-procs.map (.stdin)) ++ [term]
 (zip output-pipes, input-pipes).map ([i, o]) ->
-  E "[I] #{i.constructor.name} -> #{o.constructor.name}"
-  i.on 'data', (d) -> o.write d
+  emit-pipe 'I', i, o
+  i.on 'data', (d) ->
+    emit-pipe 'I', i, o, d, 'write'
+    o.write d
 
 if process.stdin.setRawMode?      # missing if stdin not a tty
   process.stdin.setRawMode true

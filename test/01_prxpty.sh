@@ -1,33 +1,48 @@
 #!/bin/bash
 set -e
 
-echo [TEST] $0
+# \TEST00 single to many output filters (passthru)
+function do_test {
+  local TEMP=$(mktemp)
+  $* bash -c "$CMD" > $TEMP
+  echo -en "${GOLD}\r\n" | cmp $TEMP -
+}
+
+CMD='echo hey' GOLD='hey' do_test prxpty
+CMD='echo hey' GOLD='hey' do_test prxpty -o cat
+CMD='echo hey' GOLD='hey' do_test prxpty -i cat
+CMD='echo hey' GOLD='hey' do_test prxpty -i cat -o cat
+CMD='echo hey' GOLD='hey' do_test prxpty -i cat -i cat -o cat
+CMD='echo hey' GOLD='hey' do_test prxpty -o cat -o cat
+CMD='echo hey' GOLD='hey' do_test prxpty -i cat -i cat -i cat -i cat -o cat -o cat
 
 
-# \TEST01 exec with no filters
-echo "[TEST01]"
+# \TEST01 trivial output filter(s)
+prxpty -i cat -o "tr h H" echo hello | cmp <(echo -ne 'Hello\r\n') -
+prxpty -i cat -o "tr h H" -o "tr o O" echo hello | cmp <(echo -ne 'HellO\r\n') -
+
+
+# \TEST02 can automatically push non-tty input through prxpty
 TEMP=$(mktemp)
-prxpty bash -c 'echo hey' > $TEMP
-echo -en 'hey\r\n' | cmp $TEMP -
+echo boo | prxpty bash -c "read A && echo \$A" > $TEMP
+cmp $TEMP <(echo -en 'boo\r\nboo\r\n')
 
-# \TEST02 exec with one passthru out filter
-echo "[TEST02]"
+
+# \TEST03 input filter(s)
 TEMP=$(mktemp)
-prxpty -o cat bash -c 'echo hey' > $TEMP
-echo -en 'hey\r\n' | cmp $TEMP -
+echo boo | prxpty -i cat bash -c "read A && echo \$A" > $TEMP
+cmp $TEMP <(echo -en 'boo\r\nboo\r\n')
 
-# \TEST03 exec with one passthru in filter
-echo "[TEST03]"
 TEMP=$(mktemp)
-prxpty -i cat bash -c 'echo hey' > $TEMP
-echo -en 'hey\r\n' | cmp $TEMP -
+echo boo | prxpty -i cat -i cat bash -c "read A && echo \$A" > $TEMP
+cmp $TEMP <(echo -en 'boo\r\nboo\r\n')
 
-
-# \TEST04 exec thru in and out passthru filter
-echo "[TEST04]"
 TEMP=$(mktemp)
-prxpty -i cat -o cat bash -c 'echo hey' > $TEMP
-echo -en 'hey\r\n' | cmp $TEMP -
+echo boo | prxpty -i "sed -u s/b/B/" -i "sed -u s/B/C/" bash -c "read A && echo \$A" > $TEMP
+cmp $TEMP <(echo -en 'Coo\r\nCoo\r\n')
 
 
-echo [PASS] $0
+# \TEST04 filter0: passthru input stream (check interactively)
+TEMP=$(mktemp)
+echo boo | prxpty -i "coffee src/filter0.coffee" -i "sed -u s/b/B/" bash -c "read A && echo \$A" > $TEMP
+cmp $TEMP <(echo -en 'Boo\r\nBoo\r\n')
