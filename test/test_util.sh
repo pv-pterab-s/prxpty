@@ -14,7 +14,7 @@ function test_to_leaf_token {
 }
 
 function test_to_regexp {
-  local REGEXP="^test"
+  local REGEXP
   for TOKEN in $(test_to_trunk_tokens $1) ; do
     REGEXP="$REGEXP/[0-9]+_$TOKEN"
   done
