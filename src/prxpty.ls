@@ -84,6 +84,14 @@ term.on 'exit', ->
     input-procs[0].stdin.end!
   process.stdin.destroy!
 
+kill-next = (procs) ->
+  procs.map (proc, k) ->
+    proc.on 'exit',->
+      if procs[k + 1]
+        procs[k + 1].stdin.end!
+kill-next output-procs
+kill-next input-procs
+
 process.stdout.on 'resize', ->
   term.resize process.stdout.columns, process.stdout.rows
 
