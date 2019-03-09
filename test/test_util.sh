@@ -19,6 +19,9 @@ function test_to_regexp {
     REGEXP="$REGEXP/[0-9]+_$TOKEN"
   done
   local LEAF=$(test_to_leaf_token $1)
+  if [ -z "$LEAF" ] ; then
+    LEAF="[^.]*"
+  fi
   REGEXP="$REGEXP/[0-9]+_$LEAF\(\.[^.]*\|$\)"
   echo $REGEXP
 }
