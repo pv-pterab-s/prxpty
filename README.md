@@ -13,19 +13,20 @@ Attach and develop stream filter pipelines to pseudoterminals' `stdin` and
 Record interactive sessions,
 
     # record interactive shell
-    prxpty -i 'log CI.0' -o 'log CO.0' bash
+    prxpty -i 'log CI.log' -o 'log CO.log' bash
 
     # record interactive ssh (replies from server)
-    prxpty -o 'log COS.0' ssh -t localhost prxpty -o 'log SO.0'
+    prxpty -o 'log COS.log' ssh -t localhost prxpty -o 'log SO.log'
 
 , and use results to verify individual or paired filters (e.g. encode /
 decode):
 
-    # validate `decode` ignoring pipe message boundaries from logs
-    cmp COS.0 <(decode SO.0)
+    # validate `decode` `encode` pair w/o message bounds
+    cmp file <(cat file | encode | decode)
 
-    # validate `decode` while indicating pipe message bounds
-    cmp COS.0 <(play SO.0 | DBG=stdin decode)
+    # validate `decode` produces pre-encoded stream (w/ message bounds)
+    cmp COS.log <(play SO.log | DBG=all decode)
+
 
 
 
