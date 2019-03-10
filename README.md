@@ -1,8 +1,8 @@
 # prxpty
 
 Attach and develop stream filter pipelines to pseudoterminals' `stdin` and
-`stdout`. Terminal apps to have custom compression, new interactive
-features (menus, autocomplete, etc), and more without modification.
+`stdout`. Terminal apps to have custom compression, new interactive features
+(menus, autocomplete, etc), and more without modification.
 
     # start an interactive bash session w/ filtered stdin, stdout
     prxpty -o filterStdout -i filterStdin bash
@@ -58,8 +58,8 @@ Repeated options specify additional filters onto their respective pipes:
 
         (o)utgoing    caller  <--- cat <- tac <-          <--- bash
 
-These options suffixed with 'r' or 's' indicate more specific piping
-siphins with respect to the "Internal Terminal Emulator".
+These options suffixed with 'r' or 's' indicate more specific piping siphins
+with respect to the "Internal Terminal Emulator".
 
     prxsh -ir .. -is .. -or .. -os ..
 
@@ -87,10 +87,9 @@ The explicit pipes facilitate fine-grained debugging.
     prxpty -o lf2crlf -o atob -o decode -o crlf2lf \
       ssh -t <host> prxpty -o encode -o btoa <cmd>
 
-> Practical Note: `ssh` adds a carriage return (char 13) before each line
-> feed (char 10) from server to client. `crlf2lf` reverses this to avoid
-> message corruption and `lf2crlf` is applied after decode to mimic ssh
-> behavior.
+> Practical Note: `ssh` adds a carriage return (char 13) before each line feed
+> (char 10) from server to client. `crlf2lf` reverses this to avoid message
+> corruption and `lf2crlf` is applied after decode to mimic ssh behavior.
 
 
 
@@ -131,8 +130,8 @@ Replay traffic across a pipeline while incorporating message disjunctions:
 ### Stream API (simulation)
 
 Only filters that utilize the _CACHENET Stream API_ will interpret streams
-from `play`. In doing so, those filters will receive messages discretized
-per each record of `play`'s incoming log.
+from `play`. In doing so, those filters will receive messages discretized per
+each record of `play`'s incoming log.
 
 The API is implemented in node.js as:
 
@@ -140,10 +139,10 @@ The API is implemented in node.js as:
     function cachenet.stdin.on('data', callback)
     function cachenet.stdout.write(buffer)
 
-When `CACHENET_PLAYBACK` is defined, `stdin` is read one line at a time -
-each expected to be valid JSON. The JSON is decoded to a binary message and
-passed as a Buffer object to `callback`. The caller-side behavior is
-invariant to either situation.
+When `CACHENET_PLAYBACK` is defined, `stdin` is read one line at a time - each
+expected to be valid JSON. The JSON is decoded to a binary message and passed
+as a Buffer object to `callback`. The caller-side behavior is invariant to
+either situation.
 
 Similarly, writing to `stdout` writes one message per line on each `write`.
 
@@ -151,8 +150,9 @@ Similarly, writing to `stdout` writes one message per line on each `write`.
 
 ## Organization and Conventions
 
-`prxpty`'s purpose is to provide an environment to build out stream filters
-of any complexity. `prxpty` assumes the importance of chronology of streams attached to running applications.
+`prxpty`'s purpose is to provide an environment to build out stream filters of
+any complexity. `prxpty` assumes the importance of chronology of streams
+attached to running applications.
 
 As a labority, then, the source and its conventions seek to maximize
 compartmentalization and big-data as a part of test-runs.
@@ -201,18 +201,18 @@ maintain a small footprint,
             02_decode0.coffee
             03_encode-decode -> ../encode-decode
 
-On `npm test`, evaluate each directory and `+x` script in `test/` that
-match `[0-9]+_.*`. Recursively evaluate directories similarly.
+On `npm test`, evaluate each directory and `+x` script in `test/` that match
+`[0-9]+_.*`. Recursively evaluate directories similarly.
 
 Submodules test prior to their aggregate modules through their scripts'
 numeric prefix ordering.
 
 Directories provide the opportunity to document a module with a README.
 
-Unnumbered items provide re-usable generalized tests and routines that are
-not evaluated by `npm test`. Execute these by providing a numerically
-prefixed symlink from a calling module to the item. Pass parameters by
-setting environment variables in a preceding script, e.g. `00_env.sh`.
+Unnumbered items provide re-usable generalized tests and routines that are not
+evaluated by `npm test`. Execute these by providing a numerically prefixed
+symlink from a calling module to the item. Pass parameters by setting
+environment variables in a preceding script, e.g. `00_env.sh`.
 
 The `encode-decode` directory tests an encoder / decoder pair given their
 filenames on the command line: `main.sh encoder0 decoder0`.
@@ -227,7 +227,8 @@ filenames on the command line: `main.sh encoder0 decoder0`.
     # ./test <path relative to test/> runs a dir or particular test
     ./test.sh 02_pair2
 
-Results are aggregated by stream to `out/<test path>.out` and `out/<test path>.err`.
+Results are aggregated by stream to `out/<test path>.out` and `out/<test
+path>.err`.
 
 
 ### Validating Individual Filters
@@ -240,8 +241,8 @@ developed as distinct projects. Each will have a `README.md`, perhaps
 
 ### Validating Encoder / Decoder (Paired Filters)
 
-Encoder and decoder are abstracted as stream filters. The pair will
-function at large upon successful execution of two tests:
+Encoder and decoder are abstracted as stream filters. The pair will function
+at large upon successful execution of two tests:
 
 1. The pair are an inverse:
 
@@ -253,8 +254,8 @@ function at large upon successful execution of two tests:
 
 3. The pair handle replay of an interactive `ssh` session:
 
-    * Recording of `ssh` session:  `prxpty -os 'json COS' ssh -t <host>
-        prxpty -o 'json SO'`
+    * Recording of `ssh` session:  `prxpty -os 'json COS' ssh -t <host> prxpty
+        -o 'json SO'`
 
     * Test filters while compensating for `ssh` carriage return insertion:
         `diff COS <(play SO encode crlf2lf decode lf2crlf)`
@@ -263,9 +264,9 @@ function at large upon successful execution of two tests:
 
     `prxpty -o lf2crlf -o decode -o crlf2lf ssh -t <host> prxpty -o encode`
 
-Encoder and decoder may be developed independently as stream filters. The
-pair is valid upon executing the above successfully when plugged into the
-`encode` and `decode` placeholders.
+Encoder and decoder may be developed independently as stream filters. The pair
+is valid upon executing the above successfully when plugged into the `encode`
+and `decode` placeholders.
 
 
 ## Benchmarking
