@@ -13,10 +13,10 @@ Attach and develop stream filter pipelines to pseudoterminals' `stdin` and
 Record interactive sessions,
 
     # record interactive shell
-    prxpty -i 'json CI.0' -o 'json CO.0' bash
+    prxpty -i 'log CI.0' -o 'log CO.0' bash
 
     # record interactive ssh (replies from server)
-    prxpty -o 'json COS.0' ssh -t localhost prxpty -o 'json SO.0'
+    prxpty -o 'log COS.0' ssh -t localhost prxpty -o 'log SO.0'
 
 , and use results to verify individual or paired filters (e.g. encode /
 decode):
@@ -25,7 +25,7 @@ decode):
     cmp COS.0 <(decode SO.0)
 
     # validate `decode` while indicating pipe message bounds
-    cmp COS.0 <(play SO.0 decode)
+    cmp COS.0 <(play SO.0 | DBG=stdin decode)
 
 
 
@@ -95,56 +95,56 @@ The explicit pipes facilitate fine-grained debugging.
 
 ## Filter Development
 
-### json, play
+### log, play
 
 Record, encode, and reenact stream messages.
 
-* `json [filename]` - record `stdin` messages as JSON records.
-    * When given, emit JSON to `filename` and pipe `stdin` to `stdout`.
-    * Otherwise, emit JSON to `stdout`.
+* `log [filename]` - record `stdin` messages as JSON records.
+    * When given, emit logs to `filename` and pipe `stdin` to `stdout`.
+        * Logs of format `base64(time) + base64(message)`
+    * Otherwise, emit log to `stdout`.
 
 * `play <log> <cmds>` - pipe messages from `log` to `cmd` with respect to
   message bounds implied by separate records of the incoming `log` (see
   `SOCK_SEQPACKET`).
-    * Invokes each of `cmds` with environment `CACHENET_PLAYBACK=stdin`.
+    * Invokes each of `cmds` with environment `DBG=stdin`.
     * `cmds` pipe JSON messages from left to right.
     * Pipes one line per record of JSON `log` to first of `cmds`.
     * Outputs `stdout` of final `cmds` (JSON messages)
-    * `CACHENET_PLAYBACK` interpreted by CACHENET stream API:
+    * `DBG` interpreted by CACHENET stream API:
         * Each record parsed into message.
         * Messages individually passed to incoming stream in entirety.
 
 Replay traffic across a pipeline while incorporating message disjunctions:
 
     # record interactive session
-    prxpty -o 'json RECV' bash prxpty -o 'json SENT' bash
+    prxpty -o 'log RECV' bash prxpty -o 'log SENT' bash
 
     # replay on pipeline; is client output reproduced?
-    diff RECV <(play SENT encode decode)
+    diff RECV <(play SENT | DBG=all encode | DBG=all decode)
 
     # can compensate for missing ssh carriage return before linefeed on client?
-    prxpty -o 'json RECV' ssh -t localhost prxpty -o 'json SENT'
-    diff RECV <(play SENT lf2crlf)
+    prxpty -o 'log RECV' ssh -t localhost prxpty -o 'log SENT'
+    diff RECV <(play SENT | DBG=all lf2crlf)
 
 
 ### Stream API (simulation)
 
 Only filters that utilize the _CACHENET Stream API_ will interpret streams
-from `play`. In doing so, those filters will receive messages discretized per
-each record of `play`'s incoming log.
+from `play` and generate for log comparison. In doing so, those filters will
+receive messages discretized per each record of `play`'s incoming log.
 
-The API is implemented in node.js as:
+Logs are formatted:
+* One message per line
+* Each line formatted as an ASCII string `base64(time) + base64(message)`
 
-    /* default from `cachenet` to `process` if absent CACHENET_PLAYBACK */
-    function cachenet.stdin.on('data', callback)
-    function cachenet.stdout.write(buffer)
+The API is a transparent wrapper around `process.stdin` and `process.stdout`
+dictated by the `DBG` environment variable:
 
-When `CACHENET_PLAYBACK` is defined, `stdin` is read one line at a time - each
-expected to be valid JSON. The JSON is decoded to a binary message and passed
-as a Buffer object to `callback`. The caller-side behavior is invariant to
-either situation.
-
-Similarly, writing to `stdout` writes one message per line on each `write`.
+* upon `DBG=stdout` or `DBG=all`
+    * `stdout.write` emits exactly one message in log form
+* upon `DBG=stdin` or `DBG=all`
+    * `stdin.on('data')` calls back upon each incoming log message
 
 
 
@@ -254,8 +254,8 @@ at large upon successful execution of two tests:
 
 3. The pair handle replay of an interactive `ssh` session:
 
-    * Recording of `ssh` session:  `prxpty -os 'json COS' ssh -t <host> prxpty
-        -o 'json SO'`
+    * Recording of `ssh` session:  `prxpty -os 'log COS' ssh -t <host> prxpty
+        -o 'log SO'`
 
     * Test filters while compensating for `ssh` carriage return insertion:
         `diff COS <(play SO encode crlf2lf decode lf2crlf)`
