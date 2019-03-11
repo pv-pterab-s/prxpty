@@ -11,7 +11,10 @@ set -e
 function main {
   local TARGET="$1"
   if [ -z "$TARGET" ] ; then TARGET="test"; fi
-  if [ -f "$TARGET" ] ; then ./$TARGET; fi
+  if [ -f "$TARGET" ] ; then
+    echo $TARGET
+    ./$TARGET
+  fi
   if [ -d "$TARGET" ] ; then
     for I in `ls $TARGET | grep '^[0-9]\+' | sort` ; do
       main $TARGET/$I
@@ -35,7 +38,7 @@ fi
 # detect all paths associated with incoming test
 if [ -z "$BASE" ] ; then BASE="test"; fi
 REGEXP=$(test_to_regexp $TESTNAME)
-TESTFILES=$(find $BASE -regex $BASE$REGEXP | sort)
+TESTFILES=$(find $BASE -maxdepth 1 -regex $BASE$REGEXP | sort)
 
 for TESTFILE in $TESTFILES ; do
   main $TESTFILE
