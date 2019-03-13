@@ -11,8 +11,8 @@ set -e
 function main {
   local TARGET="$1"
   if [ -z "$TARGET" ] ; then TARGET="test"; fi
+  echo $TARGET
   if [ -f "$TARGET" ] ; then
-    echo $TARGET
     ./$TARGET
   fi
   if [ -d "$TARGET" ] ; then
