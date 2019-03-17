@@ -25,8 +25,7 @@ decode):
     cmp file <(cat file | encode | decode)
 
     # validate `decode` produces pre-encoded stream (w/ message bounds)
-    cmp COS.log <(play SO.log | DBG=all decode)
-
+    cmp COS.log <(cat SO.log | DBG=all decode)
 
 
 
@@ -96,7 +95,7 @@ The explicit pipes facilitate fine-grained debugging.
 
 ## Filter Development
 
-### log, play
+### log
 
 Record, encode, and reenact stream messages.
 
@@ -105,35 +104,24 @@ Record, encode, and reenact stream messages.
         * Logs of format `base64(time) + base64(message)`
     * Otherwise, emit log to `stdout`.
 
-* `play <log> <cmds>` - pipe messages from `log` to `cmd` with respect to
-  message bounds implied by separate records of the incoming `log` (see
-  `SOCK_SEQPACKET`).
-    * Invokes each of `cmds` with environment `DBG=stdin`.
-    * `cmds` pipe JSON messages from left to right.
-    * Pipes one line per record of JSON `log` to first of `cmds`.
-    * Outputs `stdout` of final `cmds` (JSON messages)
-    * `DBG` interpreted by CACHENET stream API:
-        * Each record parsed into message.
-        * Messages individually passed to incoming stream in entirety.
-
 Replay traffic across a pipeline while incorporating message disjunctions:
 
     # record interactive session
     prxpty -o 'log RECV' bash prxpty -o 'log SENT' bash
 
     # replay on pipeline; is client output reproduced?
-    diff RECV <(play SENT | DBG=all encode | DBG=all decode)
+    diff RECV <(cat SENT | DBG=all encode | DBG=all decode)
 
     # can compensate for missing ssh carriage return before linefeed on client?
     prxpty -o 'log RECV' ssh -t localhost prxpty -o 'log SENT'
-    diff RECV <(play SENT | DBG=all lf2crlf)
+    diff RECV <(cat SENT | DBG=all lf2crlf)
 
 
 ### Stream API (simulation)
 
-Only filters that utilize the _CACHENET Stream API_ will interpret streams
-from `play` and generate for log comparison. In doing so, those filters will
-receive messages discretized per each record of `play`'s incoming log.
+Only filters that utilize the _CACHENET Stream API_ will interpret or generate
+log streams. In doing so, those filters will receive messages discretized per
+each record of an incoming log.
 
 Logs are formatted:
 * One message per line
@@ -142,9 +130,9 @@ Logs are formatted:
 The API is a transparent wrapper around `process.stdin` and `process.stdout`
 dictated by the `DBG` environment variable:
 
-* upon `DBG=stdout` or `DBG=all`
+* Upon `DBG=stdout` or `DBG=all`
     * `stdout.write` emits exactly one message in log form
-* upon `DBG=stdin` or `DBG=all`
+* Upon `DBG=stdin` or `DBG=all`
     * `stdin.on('data')` calls back upon each incoming log message
 
 
