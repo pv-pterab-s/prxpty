@@ -1,45 +1,56 @@
 #!/bin/bash
-# -*- compile-command: "PRXPTY=~/prxpty/ ./chk"; -*-
-# usage:
-#   chk <name> - runs test `find test [0-9]+_<name>\.[^.]+`
-#   chk -s <path> - runs test `basename path`
-# test names may not include the character '.'
+# -*- compile-command: "PRXPTY=~/prxpty/ ./chk src/node_modules/log.ls"; -*-
 set -e
 
-. test/test_util.sh
+function post_traverse_dir {
 
-function main {
-  local TARGET="$1"
-  if [ -z "$TARGET" ] ; then TARGET="test"; fi
-  echo $TARGET
-  if [ -f "$TARGET" ] ; then
-    ./$TARGET
-  fi
-  if [ -d "$TARGET" ] ; then
-    for I in `ls $TARGET | grep '^[0-9]\+' | sort` ; do
-      main $TARGET/$I
-    done
-  fi
+  # descend tree
+  local TREE=$1
+  local DIR
+  for DIR in $(find $TREE -mindepth 1 -maxdepth 1 -type d); do
+    post_traverse_dir $DIR
+  done
+
+  # execute test scripts
+  find $TREE -mindepth 1 -maxdepth 1 \
+       -regex '.*_[0-9]+.*' -and -not -type d | \
+    sort -t _ -n -k 2
 }
 
-# convert filename to test name
-#   (tests include leading digits, different ext's)
-TESTNAME="$1"
-if [ "$TESTNAME" = "-s" ] ; then
-  shift
-  RELPATH=$(src_path_to_rel_path $1)
-  if [ -f $RELPATH ] ; then  # run path directly when is test script
-    $1
+function filename_to_associated_tests {
+  TARGETDIR=$(dirname $TARGET)
+  find $TARGETDIR -mindepth 1 -maxdepth 1 \
+       -regex "${TARGET}_[0-9]+.*" -and -not -type d | \
+    sort -t _ -n -k 2
+}
+
+TARGET=$1
+if [ -z "$TARGET" ] ; then
+  TARGET=src
+fi
+if [ -d "$TARGET" ] ; then
+  for FILE in $(post_traverse_dir $TARGET) ; do
+    echo "[TEST] chk: exec $FILE"
+    $(readlink -f $FILE) 2>&1
+  done
+  exit 0
+fi
+if [ -f "$TARGET" ] ; then
+
+  # run file itself if test
+  if [[ "$TARGET" =~ .*_[0-9]+\.test\..* ]] ; then
+    echo "[TEST] chk: exec $TARGET"
+    $(readlink -f $TARGET) 2>&1
     exit 0
   fi
-  TESTNAME=${RELPATH%.*}   # drop extension
+
+  # otherwise run associated tests
+  for FILE in $(filename_to_associated_tests $TARGET) ; do
+    echo "[TEST] chk: exec $FILE"
+    $(readlink -f $FILE) 2>&1
+  done
+  exit 0
 fi
 
-# detect all paths associated with incoming test
-if [ -z "$BASE" ] ; then BASE="test"; fi
-REGEXP=$(test_to_regexp $TESTNAME)
-TESTFILES=$(find $BASE -maxdepth 1 -regex $BASE$REGEXP | sort)
-
-for TESTFILE in $TESTFILES ; do
-  main $TESTFILE
-done
+echo "[FAIL] chk: invalid test target $TARGET"
+exit 1

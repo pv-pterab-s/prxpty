@@ -12,4 +12,4 @@
                              (remove-duplicates new-env :test 'string=))
                  (if buffer-file-name
                      (setq-local compile-command
-                                 (concat "cd " prxpty-path " && ./chk -s " buffer-file-name))))))))
+                                 (concat "cd " prxpty-path " && ./chk " buffer-file-name))))))))
