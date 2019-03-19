@@ -25,7 +25,6 @@ for I in {0..2} ; do
   sleep 1s
 done | src/log.ls | tee $OUTTMP
 
-OUTTMP=/tmp/tmp.bsHY9CXpfJ
 grep -ne '^............MAo=' $OUTTMP | grep -e '^1:'
 grep -ne '^............MQo=' $OUTTMP | grep -e '^2:'
 grep -ne '^............Mgo=' $OUTTMP | grep -e '^3:'

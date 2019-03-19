@@ -44,5 +44,5 @@ cmp $TEMP <(echo -en 'Coo\r\nCoo\r\n')
 
 # \TEST04 filter0: passthru input stream (check interactively)
 TEMP=$(mktemp)
-echo boo | prxpty -i "coffee src/filter0.coffee" -i "sed -u s/b/B/" bash -c "read A && echo \$A" > $TEMP
+echo boo | prxpty -i "src/filter0.ls" -i "sed -u s/b/B/" bash -c "read A && echo \$A" > $TEMP
 cmp $TEMP <(echo -en 'Boo\r\nBoo\r\n')
