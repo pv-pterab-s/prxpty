@@ -12,8 +12,8 @@ write-to-file-p = process.argv[3]?
 if write-to-file-p
   fp = fs.openSync process.argv[3], 'w'
   process.stdin.on 'data', (d) ->
-    fs.writeSync fp, log.msg2log(d) + '\n'
+    fs.writeSync fp, log.msg2log(d.toString!) + '\n'
     process.stdout.write d
 else
   process.stdin.on 'data', (d) ->
-    process.stdout.write log.msg2log(d) + '\n'
+    process.stdout.write log.msg2log(d.toString!) + '\n'
