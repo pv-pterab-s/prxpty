@@ -17,6 +17,7 @@
     "livescript": "^1.6.0",
     "node-pty": "^0.8.1",
     "prelude-ls": "^1.1.2",
-    "shell-quote": "^1.6.1"
+    "shell-quote": "^1.6.1",
+    "stacktrace-js": "^2.0.0"
   }
 }
