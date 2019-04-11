@@ -82,6 +82,8 @@ term.on 'exit', ->
     output-procs[0].stdin.end!
   if input-procs.length > 0
     input-procs[0].stdin.end!
+  if process.stdin.setRawMode?
+    process.stdin.setRawMode false
   process.stdin.destroy!
 
 kill-next = (procs) ->
