@@ -71,7 +71,6 @@ output-procs = map start-filter, opts.O
 
 E "[INFO] term with #{opts.exec} and #{JSON.stringify opts.args}"
 term = pty.spawn (opts.exec or 'bash'), (opts.args or []),
-  name: 'xterm-color'
   cols: process.stdout.columns
   rows: process.stdout.rows
   cwd: process.env.HOME
